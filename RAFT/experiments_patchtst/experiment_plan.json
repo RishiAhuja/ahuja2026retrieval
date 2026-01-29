@@ -1,0 +1,128 @@
+{
+  "experiment_suite": "PatchTST Long Context Analysis",
+  "objective": "Test if state-of-the-art PatchTST degrades with longer context",
+  "baseline_comparison": {
+    "RAFT": {
+      "seq_len": 720,
+      "test_mse": 0.379,
+      "model_type": "retrieval-based"
+    },
+    "Vanilla_Transformer_720": {
+      "seq_len": 720,
+      "test_mse": 0.556,
+      "model_type": "vanilla"
+    },
+    "Vanilla_Transformer_3000": {
+      "seq_len": 3000,
+      "test_mse": 1.323,
+      "model_type": "vanilla"
+    }
+  },
+  "experiments": [
+    {
+      "id": "patchtst_exp1",
+      "name": "PatchTST Baseline (720)",
+      "priority": "CRITICAL",
+      "config": {
+        "model": "PatchTST",
+        "seq_len": 720,
+        "label_len": 48,
+        "pred_len": 96,
+        "patch_len": 16,
+        "stride": 8,
+        "d_model": 128,
+        "n_heads": 8,
+        "e_layers": 3,
+        "d_ff": 256,
+        "dropout": 0.1,
+        "batch_size": 16,
+        "train_epochs": 10,
+        "learning_rate": 0.0001
+      },
+      "comparison": "Fair comparison vs RAFT at same context length",
+      "expected_mse_range": "0.40 - 0.50"
+    },
+    {
+      "id": "patchtst_exp2",
+      "name": "PatchTST Long Context (3000)",
+      "priority": "CRITICAL",
+      "config": {
+        "model": "PatchTST",
+        "seq_len": 3000,
+        "label_len": 48,
+        "pred_len": 96,
+        "patch_len": 16,
+        "stride": 8,
+        "d_model": 128,
+        "n_heads": 8,
+        "e_layers": 3,
+        "d_ff": 256,
+        "dropout": 0.1,
+        "batch_size": 8,
+        "train_epochs": 10,
+        "learning_rate": 0.0001
+      },
+      "comparison": "Test if PatchTST degrades like vanilla Transformer",
+      "expected_mse_range": "0.40 - 0.90 (wide range - this is THE test)"
+    },
+    {
+      "id": "patchtst_exp3",
+      "name": "PatchTST Mid-Range (1440)",
+      "priority": "HIGH",
+      "config": {
+        "model": "PatchTST",
+        "seq_len": 1440,
+        "label_len": 48,
+        "pred_len": 96,
+        "patch_len": 16,
+        "stride": 8,
+        "d_model": 128,
+        "n_heads": 8,
+        "e_layers": 3,
+        "d_ff": 256,
+        "dropout": 0.1,
+        "batch_size": 12,
+        "train_epochs": 10,
+        "learning_rate": 0.0001
+      },
+      "comparison": "Track degradation trend",
+      "expected_mse_range": "0.40 - 0.70"
+    },
+    {
+      "id": "patchtst_exp4",
+      "name": "PatchTST Standard (336)",
+      "priority": "MEDIUM",
+      "config": {
+        "model": "PatchTST",
+        "seq_len": 336,
+        "label_len": 48,
+        "pred_len": 96,
+        "patch_len": 16,
+        "stride": 8,
+        "d_model": 128,
+        "n_heads": 8,
+        "e_layers": 3,
+        "d_ff": 256,
+        "dropout": 0.1,
+        "batch_size": 32,
+        "train_epochs": 10,
+        "learning_rate": 0.0001
+      },
+      "comparison": "Standard benchmark comparison",
+      "expected_mse_range": "0.38 - 0.45"
+    }
+  ],
+  "decision_tree": {
+    "after_exp1_and_exp2": {
+      "if_degradation_seen": "Run exp3, write strong degradation paper",
+      "if_stable": "Reframe as efficiency paper, run exp4 for completeness",
+      "if_patchtst_beats_raft": "Investigate why, consider hybrid approach"
+    }
+  },
+  "timeline": {
+    "day_1": "Setup + Exp1 (720)",
+    "day_2": "Exp2 (3000) - CRITICAL RESULT",
+    "day_3": "Exp3 (1440) if needed",
+    "day_4": "Analysis + graphs + paper updates"
+  }
+}

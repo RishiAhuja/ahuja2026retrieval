@@ -1,0 +1,74 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\citation{informer}
+\citation{autoformer}
+\citation{patchtst}
+\citation{timegpt}
+\citation{rag}
+\citation{ettdataset}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Long-Context Transformers}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Time Series Forecasting Models}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Retrieval-Augmented Generation}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Experimental Setup}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Dataset}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Models}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Performance Comparison: RAFT vs Time-CAG Experiments. The bar chart demonstrates that RAFT's retrieval mechanism maintains consistent performance (MSE 0.379) whereas long-context approaches degrade significantly, with the 3000-token configuration achieving 3.5$\times $ worse performance.}}{3}{figure.1}\protected@file@percent }
+\newlabel{fig:mse_comparison}{{1}{3}{Performance Comparison: RAFT vs Time-CAG Experiments. The bar chart demonstrates that RAFT's retrieval mechanism maintains consistent performance (MSE 0.379) whereas long-context approaches degrade significantly, with the 3000-token configuration achieving 3.5$\times $ worse performance}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Training Details}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Evaluation Metrics}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{3}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Main Results: Long Context Degrades Performance}{3}{subsection.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Context Window Size vs. Test MSE. The trend indicates monotonic performance degradation as context length increases, contrasting with the stable baseline of the retrieval-augmented approach. More context yields 3.5$\times $ worse performance with 4$\times $ more data.}}{3}{figure.2}\protected@file@percent }
+\newlabel{fig:context_mse}{{2}{3}{Context Window Size vs. Test MSE. The trend indicates monotonic performance degradation as context length increases, contrasting with the stable baseline of the retrieval-augmented approach. More context yields 3.5$\times $ worse performance with 4$\times $ more data}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Context Length vs Performance}{3}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Ablation Study: Smaller Models Generalize Better}{3}{subsection.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Performance Comparison Across Context Lengths}}{4}{table.1}\protected@file@percent }
+\newlabel{tab:main_results}{{1}{4}{Performance Comparison Across Context Lengths}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Time-CAG Ablation on Model Dimension ($e_{\text  {layers}}=2$, dropout$=0.1$)}}{4}{table.2}\protected@file@percent }
+\newlabel{tab:ablation_d}{{2}{4}{Time-CAG Ablation on Model Dimension ($e_{\text {layers}}=2$, dropout$=0.1$)}{table.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Encoder Layers Ablation ($d_{\text  {model}}=32$, dropout$=0.1$)}}{4}{table.3}\protected@file@percent }
+\newlabel{tab:ablation_e}{{3}{4}{Encoder Layers Ablation ($d_{\text {model}}=32$, dropout$=0.1$)}{table.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Computational Cost vs Performance Trade-off}{4}{subsection.4.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Ablation Study: Model Dimension vs. Encoder Layers. The heatmap demonstrates that smaller models ($d_{\text  {model}}=32$, $e_{\text  {layers}}=2$) generalize better, achieving MSE 0.397. However, even the optimal configuration remains 4.7\% worse than RAFT (0.379).}}{4}{figure.3}\protected@file@percent }
+\newlabel{fig:ablation}{{3}{4}{Ablation Study: Model Dimension vs. Encoder Layers. The heatmap demonstrates that smaller models ($d_{\text {model}}=32$, $e_{\text {layers}}=2$) generalize better, achieving MSE 0.397. However, even the optimal configuration remains 4.7\% worse than RAFT (0.379)}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}PatchTST: Even SOTA Fails at Long Context}{4}{subsection.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Computational Efficiency vs Performance. RAFT achieves the optimal trade-off (fast and accurate), whereas the long-context configuration (Exp1) falls in the disaster zone: 17$\times $ slower and 3.5$\times $ worse performance.}}{5}{figure.4}\protected@file@percent }
+\newlabel{fig:efficiency}{{4}{5}{Computational Efficiency vs Performance. RAFT achieves the optimal trade-off (fast and accurate), whereas the long-context configuration (Exp1) falls in the disaster zone: 17$\times $ slower and 3.5$\times $ worse performance}{figure.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Cross-Domain Validation}{5}{subsection.4.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Cross-Domain Validation Results}}{5}{table.4}\protected@file@percent }
+\newlabel{tab:cross_domain}{{4}{5}{Cross-Domain Validation Results}{table.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{5}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Why Long Context Fails for Time Series}{5}{subsection.5.1}\protected@file@percent }
+\citation{timegpt}
+\citation{moirai}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}When Retrieval Wins}{6}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Implications for Time Series Foundation Models}{6}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Limitations}{6}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{6}{section.6}\protected@file@percent }
+\bibstyle{IEEEtran}
+\bibcite{rag}{1}
+\bibcite{informer}{2}
+\bibcite{autoformer}{3}
+\bibcite{patchtst}{4}
+\bibcite{fedformer}{5}
+\bibcite{transformer}{6}
+\bibcite{longformer}{7}
+\bibcite{flashattention}{8}
+\bibcite{transformerxl}{9}
+\bibcite{timegpt}{10}
+\bibcite{moirai}{11}
+\bibcite{ettdataset}{12}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Hyperparameter Details}{7}{appendix.A}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B}Complete Ablation Results}{7}{appendix.B}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C}Computational Environment}{7}{appendix.C}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {D}Dataset Statistics}{7}{appendix.D}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Full Experimental Configurations}}{8}{table.5}\protected@file@percent }
+\newlabel{tab:hyperparams}{{5}{8}{Full Experimental Configurations}{table.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Time-CAG Full Ablation Grid (MSE values)}}{8}{table.6}\protected@file@percent }
+\newlabel{tab:full_ablation}{{6}{8}{Time-CAG Full Ablation Grid (MSE values)}{table.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {E}Reproducibility Checklist}{8}{appendix.E}\protected@file@percent }
+\gdef \@abspage@last{8}
