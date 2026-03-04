@@ -1,0 +1,349 @@
+% Updated by Abdul Fatir Ansari on Jan 11, 2026 for the TSALM Workshop at ICLR 2026
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2026_conference,times}
+
+% Optional math commands from https://github.com/goodfeli/dlbook_notation.
+\input{math_commands.tex}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{booktabs} 
+\usepackage{xcolor}
+%\usepackage{hyperref}
+%\usepackage{url}
+
+
+\title{Retrieval Mechanisms Surpass Long-Context Scaling in Time Series Forecasting}
+
+% Authors must not appear in the submitted version. They should be hidden
+% as long as the \iclrfinalcopy macro remains commented out below.
+% Non-anonymous submissions will be rejected without review.
+
+\author{Rishi Ahuja \hspace{1.5em} Dr.~Kumar Prateek \hspace{1.5em} Dr.~Simranjit Singh \hspace{1.5em} Dr.~Vijay Kumar \\
+Department of Information Technology \\
+Dr.\ B.R.\ Ambedkar National Institute of Technology Jalandhar \\
+Punjab 144011, India \\
+\texttt{\{rishia.it.24, kumarprateek, singhsimranjit, vijayk\}@nitj.ac.in}
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+% Uncomment for camera-ready version, but NOT for submission. Please DO NOT use this for preprints. Update the stlye file to say "Preprint" instead.
+\iclrfinalcopy
+
+% Specify the track: "Research" or "Industry \& Applications"
+\track{Research}
+% \track{Industry \& Applications}
+
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+Time Series Foundation Models (TSFMs) have borrowed the long context paradigm from natural language processing under the premise that feeding more history into the model improves forecast quality. But in stochastic domains, distant history is often just high-frequency noise, not signal. Hence, the proposed work tests whether this premise actually holds by running continuous context architectures (PatchTST included) through the ETTh1 benchmark. The obtained results contradict the premise: an inverse scaling law shows up clearly, with forecasting error rising as context gets longer. A 3,000-step window {\color{blue}can cause} performance to drop by {\color{blue}up to} 68\%, evidence that attention mechanisms are poor at ignoring irrelevant historical volatility. Retrieval-Augmented Forecasting (RAFT) is evaluated as an alternative. RAFT achieves a mean squared error (MSE) of 0.379 with a fixed 720-step window and selective retrieval, {\color{blue}outperforming both long-context configurations and zero-shot foundation models (Chronos, Moirai)} despite requiring far less computation. In addition, the retrieval step injects only the most relevant historical segments as dynamic exogenous variables, which gives the model a context-informed inductive bias it cannot build on its own from raw sequences. Therefore, foundation models going forward need to shift architecturally toward selective retrieval.
+\end{abstract}
+
+\section{Introduction}
+
+Time Series Foundation Models (TSFMs) owe much of their recent popularity to the ``scaling hypothesis,'' the idea that larger models with longer input windows will produce monotonically better forecasts. Moirai \citep{woo2024unified} and Chronos \citep{ansari2024chronos} have given weight to that idea: both achieve strong zero-shot results across multiple forecasting domains by utilizing scale. But a harder question remains unresolved. \textit{Can the ``Long Context'' logic of Large Language Models (LLMs) be transplanted directly into the stochastic world of time series?} There are good reasons to doubt it. Language tokens retain semantic content even when they appear thousands of positions earlier in a document. Numerical time series do not behave this way. Old values in a stochastic process are frequently just noise, and their statistical relationship to future values weakens sharply over time. Therefore, the proposed work advances the following hypothesis: when the context window in time series forecasting is expanded without discrimination, a failure mode called Stochastic Noise Accumulation takes over. Irrelevant historical values flood the attention computation, the mechanism loses the ability to weight important recent patterns appropriately, and forecasting accuracy suffers. Recently, published work already hints the same like the work \cite{williams2025context} shows that supplying even short textual descriptions alongside numerical inputs yields large accuracy gains, a finding that highlights the poverty of raw numerical context on its own. Furthermore, \cite{arango2025chronosx} arrives at a related finding: feeding exogenous variables into pretrained models is critical for downstream task adaptation. Accordingly, the proposed work extends this line of reasoning and contends that \textit{selective retrieval}, not blind window expansion, provides the correct mechanism for injecting useful context. 
+
+The work uses ETTh1 benchmark for empirical validation and compares three model types: vanilla Transformers, PatchTST \citep{nie2023time} (the current state-of-the-art), and a Retrieval-Augmented Forecasting (RAFT) baseline. The experiments produce an Inverse Scaling Law for stochastic time series: a) \textbf{Long Context Fails}: PatchTST accuracy {\color{blue}can drop by up to} 68\% when context grows from 720 to 3,000 tokens. Even advanced patching cannot screen out the noise in long historical windows. b) \textbf{Retrieval Wins}: RAFT \citep{han2025raft} uses a 720-step window plus selective retrieval and scores the best MSE (0.379), {\color{blue}outperforming all long-context and zero-shot foundation model baselines}.
+% \begin{itemize}
+%     \item \textbf{Long Context Fails:} PatchTST accuracy drops by 68\% when context grows from 720 to 3,000 tokens. Even advanced patching cannot screen out the noise in long historical windows.
+%     \item \textbf{Retrieval Wins:} RAFT \citep{han2025raft} uses a 720-step window plus selective retrieval and scores the best MSE (0.379), beating the 3,000-step models (MSE 0.647) by a wide margin.
+% \end{itemize}
+Retrieved segments function as \textit{dynamic exogenous variables} that provide context-informed inductive bias, and they do so without the noise penalties attached to long continuous windows.
+
+\section{Related Work}
+
+\subsection{Time Series Foundation Models and Context Scaling}
+Moirai and Chronos belong to a generation of TSFMs trained on large heterogeneous corpora, and both achieve noteworthy zero-shot transfer across domains. Their design philosophy is to capture universal temporal patterns, replicating the formula that worked for LLMs. PatchTST \citep{nie2023time} follows a different approach: it uses patching to reduce computational cost, which in principle allows very long input sequences to be processed without quadratic attention overhead. A premise shared by all these models is that longer lookback windows translate into higher accuracy. However, evidence from the proposed work says otherwise. In stochastic settings, the distant portion of the input sequence is dominated by high-frequency volatility with little predictive value. Therefore\footnote{LLMs were used to refine the grammar of this manuscript}, blindly extending context leads to a ``noise accumulation'' bottleneck that degrades predictions, a failure mode absent from the text-based tasks where these designs originated.
+
+\subsection{Context-Informed Forecasting and Retrieval}
+Auxiliary information has proven valuable for forecast robustness. \cite{williams2025context} shows that textual grounding of forecasts reduces ambiguity in foundation models substantially and calls context ``key.'' But, \cite{arango2025chronosx} demonstrates a complementary point through ChronosX: exogenous variables enable pretrained models to specialize for particular downstream tasks. The shared lesson from both is that predictions benefit when models receive curated context rather than raw data. Yet autoregressive models lack a built-in mechanism for relevance-based filtering of their input history. RAFT fills that gap. It treats the historical record as a pool from which only the most similar segments are retrieved via cosine similarity. Stochastic noise is rejected at the retrieval stage, and what enters the model has high information density. The net effect is a dynamic inductive bias rooted in the same philosophy as exogenous signal injection but implemented through a retrieval mechanism.
+
+\section{Methodology and Analysis}
+
+\subsection{The Experimental Framework}
+
+The proposed work chooses the ETTh1 (Electricity Transformer Temperature) benchmark \citep{zhou2021informer} because its high-frequency stochastic volatility makes it challenging for any model that relies on long historical context. Also, separating genuine signals from random fluctuations is difficult on this dataset, which makes it a natural stress test for the ``Long Context'' hypothesis. A prediction horizon of $H=96$ steps is fixed throughout. The lookback window $L$ is varied across $\{720, 1440, 3000\}$ so that the impact of context scaling can be measured in isolation. Mean Squared Error (MSE) and Mean Absolute Error (MAE) are used as the evaluation metrics. The experiment pits \textit{Continuous Context} models against a \textit{Retrieved Context} model: a) \textbf{Vanilla Transformer (Baseline)}: It uses Encoder-decoder architecture with $d_{model}=512$ and $n_{heads}=8$ to observe how standard attention behaves as context grows. b) \textbf{PatchTST (SOTA Long-Context)}: It uses channel independence and patching ($P=16, S=8$) per \cite{nie2023time}. It represents the scaling hypothesis at maximum strength: long context, low computational cost. c) \textbf{RAFT (Retrieval Baseline)}: It keeps the lookback short ($L=720$) and pulls in relevant history through top-$k$ cosine similarity retrieval \citep{han2025raft}. Also, it tests whether feeding high-quality context into a small window beats feeding noisy context into a large one.  
+% \begin{itemize}
+%     \item \textbf{Vanilla Transformer (Baseline):} Encoder-decoder architecture with $d_{model}=512$ and $n_{heads}=8$, used to observe how standard attention behaves as context grows.
+%     \item \textbf{PatchTST (SOTA Long-Context):} Uses channel independence and patching ($P=16, S=8$) per \cite{nie2023time}. Represents the scaling hypothesis at maximum strength: long context, low computational cost.
+%     \item \textbf{RAFT (Retrieval Baseline):} Keeps the lookback short ($L=720$) and pulls in relevant history through top-$k$ cosine similarity retrieval \citep{han2025raft}. Tests whether feeding high-quality context into a small window beats feeding noisy context into a large one.
+% \end{itemize}
+
+\subsection{The Inverse Scaling Law} \label{3.2}
+The experiments yield a result that runs opposite to NLP scaling laws. Figure \ref{fig:bar_chart} shows a clear Inverse Scaling Law: longer context does not reduce error. MSE rises at every step as the window gets larger.
+% \begin{figure}[ht]
+%     \centering
+%     \includegraphics[width=0.85\textwidth]{figures/context_vs_mse_iclr.pdf}
+%     \caption{The Inverse Scaling Law on ETTh1. RAFT (Green) holds error low (MSE 0.379) with a fixed window. PatchTST (Orange), when extended to 3000 steps, sees its performance degrade by 68\% (MSE 0.647). The Vanilla Transformer (Red) collapses entirely.}
+%     \label{fig:bar_chart}
+% \end{figure}
+The Vanilla Transformer breaks down most severely. Going from 720 to 3,000 steps pushes MSE up by about \textbf{138\%}. Self-attention, given that many positions to attend over, distributes weight too broadly and cannot recover the relevant signal. PatchTST handles the problem better but still fails. At 3,000 steps, its MSE increases by \textbf{68\%} (from $0.385$ to $0.647$). Patching, though designed for long sequences, fails to reject noise effectively over extended histories. Therefore, practitioners assuming patching eliminates noise should reconsider these results.
+%The patching mechanism, despite being designed for long sequences, does not provide enough noise rejection when the history is this long. Therefore, practitioners assuming patching eliminates noise should reconsider these results.
+%Therefore, practitioners who assume patching solves the noise problem should reconsider based on these numbers.
+
+\subsection{Generalization Across Domains}
+The work tests two more benchmarks ETTh2 \citep{zhou2021informer} (electricity domain) and Exchange Rate (financial domain) to verify that the inverse scaling law is not just a quirk of ETTh1.
+\begin{table}[h]
+\centering
+\scriptsize
+\caption{Cross-Domain Validation: Degradation of Long Context}
+\label{tab:cross_domain}
+\small
+\begin{tabular}{llcc}
+\toprule
+\textbf{Dataset} & \textbf{Model} & \textbf{MSE $\downarrow$} & \textbf{Degradation} \\
+\midrule
+\multirow{2}{*}{ETTh2} & PatchTST (720) & 0.307 & --- \\
+& PatchTST (3000) & 0.533 & \textbf{+73.4\%} \\
+\midrule
+\multirow{2}{*}{Exchange} & PatchTST (720) & 0.093 & --- \\
+& PatchTST (3000) & 0.350 & \textbf{+276.8\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+Table \ref{tab:cross_domain} shows severe degradation across both additional datasets. On Exchange Rate data, where financial volatility is high, the long-context configuration degrades by \textbf{276\%}. Noise accumulation is not dataset-specific; it is a structural problem for stochastic time series, and it worsens proportionally with the volatility of the underlying process.
+
+\subsection{Mechanism Analysis: Stochastic Noise Accumulation}
+The proposed work attributes the observed degradation to \textbf{Stochastic Noise Accumulation}. In NLP, tokens far back in the sequence frequently carry high information density. ETTh1 data does not have that property: distant points are mostly uncorrelated stochastic fluctuations without predictive utility. As $L$ increases, the Softmax denominator in the attention computation grows with it. Probability mass spreads across positions that contribute nothing useful, and the share allocated to genuinely informative recent timesteps shrinks. Besides, over-smoothing of internal representations is the consequence: the model loses the high-frequency detail required for accurate prediction. This observation is consistent with \cite{williams2025context}, who find that context quality matters far more than context volume when signal-to-noise ratio is low.
+
+{\color{blue}Quantitative measurements of attention entropy confirm this mechanism. As context grows from $L=336$ (42 patches) to $L=3000$ (375 patches), the normalized attention entropy of PatchTST rises from 0.952 to 0.989, approaching the theoretical maximum of 1.0 that corresponds to a uniform distribution. At $L=3000$, the effective attention rank collapses to 0.1: no single patch receives meaningfully differentiated weight. In practice, the attention mechanism has degenerated into uniform averaging over hundreds of irrelevant positions.}
+
+\subsection{The Superiority of Selective Retrieval}
+RAFT outperforms the scaling-based models because its context-informed inductive bias pre-filters history before attention ever operates on it.
+\begin{figure}[ht]
+    \centering
+   \includegraphics[width=5.2in, height=1.5in, keepaspectratio=false]{figures/mse_comparison_iclr.pdf}
+    %\includegraphics[width=0.75\textwidth]{figures/mse_comparison_iclr.pdf}
+    \caption{Performance degradation trend. Error rate (Y-axis) rises monotonically as Context Length (X-axis) increases from 720 to 3000, illustrating Stochastic Noise Accumulation.}
+    \label{fig:line_chart}
+\end{figure}
+Figure \ref{fig:line_chart} shows RAFT at an \textbf{MSE of 0.379} with only 720 steps of direct context. PatchTST at 720 steps scores 0.385, so RAFT is slightly better even without the scaling advantage. At 3000 steps PatchTST degrades to 0.647, making RAFT the clear winner. Moreover, RAFT stabilizes its forecasts and avoids the noise penalty that scaling imposes by injecting retrieved segments as dynamic exogenous variables \citep{arango2025chronosx}. Therefore, retrieval is a more effective noise rejection strategy than window extension for stochastic data.
+
+{\color{blue}The advantage of retrieval extends beyond comparisons with long-context scaling. Zero-shot foundation models---Chronos-T5-Small \citep{ansari2024chronos} (MSE 0.483 at $L=720$) and Moirai-1.1-R-Small \citep{woo2024unified} (MSE 0.553 at $L=720$)---both fall substantially short of RAFT's 0.379, despite being pretrained on far larger and more diverse corpora. Full per-channel results appear in Appendix~\ref{sec:foundation_comparison}.}
+
+\section{Discussion}
+
+\subsection{The Stochastic Context Dilemma}
+NLP scaling laws predict that more context produces better outputs. The inverse scaling law documented here for time series contradicts that prediction, and the reason lies in a basic difference between the two data types. In language, a proper noun or a factual claim retains its informativeness regardless of how far back it appears in the input. ETTh1 measurements from 2,000 steps ago, by contrast, are essentially uncorrelated noise with respect to the prediction target. When the attention Softmax must be computed over 3,000 positions, probability mass is inevitably wasted on positions that carry no forecasting information. The proposed work characterizes this as \textit{Attention Entropy} inflation. {\color{blue}Measured normalized entropy rises from 0.952 ($L=336$) to 0.989 ($L=3000$), confirming near-complete entropy saturation at extreme context lengths (Section~3.3).} The relevant signals from the recent past, which should receive high attention weight, are drowned out. Besides, more history improves predictions only when that history has high semantic density; stochastic volatility violates that condition almost by definition.
+
+\subsection{The Efficiency-Accuracy Trade-off}
+Training cost makes the case against long context even stronger: a) \textbf{Long Context (Inefficient)}: Vanilla Transformer at 3,000 steps required 83.47 minutes of training and produced MSE 1.323, the worst result in the study. b) \textbf{Retrieval (Efficient)}: RAFT trained in 2.13 minutes (roughly 40$\times$ faster) and produced MSE 0.379, the best result.
+% \begin{itemize}
+%     \item \textbf{Long Context (Inefficient):} Vanilla Transformer at 3,000 steps required 83.47 minutes of training and produced MSE 1.323, the worst result in the study.
+%     \item \textbf{Retrieval (Efficient):} RAFT trained in 2.13 minutes (roughly 40$\times$ faster) and produced MSE 0.379, the best result.
+% \end{itemize}
+The expectation behind NLP scaling laws is that spending more compute yields better model quality. In time series forecasting, spending more compute on longer context yields worse quality and wastes resources in the process.
+
+\subsection{Retrieval as a Denoising Inductive Bias}
+RAFT works well because its top-$k$ retrieval stage operates as a ``hard attention'' gate before the standard ``soft attention'' layer. Two stages run in sequence, forming a noise-rejection pipeline: a) \textbf{Filter}: Retrieval discards segments with low similarity. The surviving segments have high fidelity to the current forecasting situation. b) \textbf{Process}: The Transformer receives only these filtered inputs, treating them as \textit{dynamic exogenous variables} \citep{arango2025chronosx} rather than undifferentiated history.
+% \begin{enumerate}
+%     \item \textbf{Filter:} Retrieval discards segments with low similarity. The surviving segments have high fidelity to the current forecasting situation.
+%     \item \textbf{Process:} The Transformer receives only these filtered inputs, treating them as \textit{dynamic exogenous variables} \citep{arango2025chronosx} rather than undifferentiated history.
+% \end{enumerate}
+Besides, Long-range dependencies can still be exploited through retrieval, but without the noise accumulation that accompanies brute-force window scaling.
+
+\section{Conclusion and Future Work}
+
+The proposed work has tested the ``Long Context'' hypothesis for time series forecasting and found it wanting. On ETTh1, PatchTST {\color{blue}can lose up to} 68\% of its accuracy when context extends from 720 to 3,000 steps, an Inverse Scaling Law driven by noise accumulation in stochastic data. RAFT \citep{han2025raft}, with selective retrieval and a constrained 720-step window, reaches MSE 0.379, well below the expensive long-context alternatives. Context quality, not context volume, determines forecast accuracy. 
+% The next step for the field is to build the retrieval mechanism into the pretraining objective itself. 
+Hence, the next frontier is to integrate retrieval directly into pretraining. Besides, foundation models that use dynamic retrieval heads, trained end-to-end to identify the most useful historical segments, could achieve robust zero-shot performance without the noise penalty of static windows. Such an architecture would put into practice the ``Context is Key'' philosophy advocated by \cite{williams2025context} and make stochastic time series forecasting substantially more reliable.
+
+\bibliography{iclr2026_conference}
+\bibliographystyle{iclr2026_conference}
+
+\clearpage
+\renewcommand{\thetable}{A\arabic{table}}
+\renewcommand{\thefigure}{A\arabic{figure}}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+\appendix
+\section*{Appendix}
+\section{Experimental Configuration}
+
+Hyperparameter settings and training configurations are reported here for reproducibility. Figure \ref{fig:bar_chart} shows a clear Inverse Scaling Law already discussed in \ref{3.2}.   
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/context_vs_mse_iclr.pdf}
+    \caption{The Inverse Scaling Law on ETTh1. RAFT (Green) holds error low (MSE 0.379) with a fixed window. PatchTST (Orange), when extended to 3000 steps, {\color{blue}can see} its performance degrade by {\color{blue}up to} 68\% (MSE 0.647). The Vanilla Transformer (Red) collapses entirely.}
+    \label{fig:bar_chart}
+\end{figure}
+
+\subsection{Model Hyperparameters}
+
+Table~\ref{tab:hyperparams} gives the full configuration of each model. The same optimization settings apply across all experiments to keep the comparison controlled.
+
+\begin{table}[h]
+\centering
+\caption{Complete Hyperparameter Configurations}
+\label{tab:hyperparams}
+%\small
+\scriptsize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Parameter} & \textbf{Vanilla TF} & \textbf{PatchTST} & \textbf{RAFT} \\
+\midrule
+seq\_len & 720/1440/3000 & 720/3000 & 720 \\
+pred\_len & 96 & 96 & 96 \\
+label\_len & 48 & 48 & 48 \\
+$d_{\text{model}}$ & 512 & 128 & 128 \\
+$n_{\text{heads}}$ & 8 & 16 & 8 \\
+$e_{\text{layers}}$ & 2 & 3 & 2 \\
+$d_{\text{layers}}$ & 1 & 1 & 1 \\
+$d_{\text{ff}}$ & 2048 & 256 & 256 \\
+dropout & 0.1 & 0.1 & 0.1 \\
+patch\_len & --- & 16 & --- \\
+stride & --- & 8 & --- \\
+top-$k$ retrieval & --- & --- & 5 \\
+\midrule
+learning\_rate & 0.0001 & 0.0001 & 0.0001 \\
+optimizer & Adam & Adam & Adam \\
+batch\_size & 32 & 32 & 32 \\
+epochs & 10 & 10 & 10 \\
+patience & 3 & 3 & 3 \\
+loss & MSE & MSE & MSE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+Adam with a learning rate of 0.0001 was used for all models. If validation MSE failed to improve for 3 consecutive epochs, training was stopped early. The random seed for weight initialization was 2021 throughout, which makes results deterministic.
+
+\section{Dataset Details}
+
+The inverse scaling law hypothesis is tested on three benchmarks that span different domains and noise profiles.
+
+\subsection{ETTh1 Dataset}
+
+ETTh1 (Electricity Transformer Temperature) contains hourly transformer readings collected over 600 days (14,400 timesteps total). The measured features are HUFL, HULL, MUFL, MULL, LUFL, LULL, and OT (Oil Temperature), giving seven channels. A 60/20/20 split was used for training, validation, and test partitions. Each feature was normalized independently using StandardScaler.
+
+\subsection{Cross-Domain Datasets}
+
+ETTh2 has the same format as ETTh1 but comes from a different transformer station. The Exchange Rate dataset contains daily rates for 8 currencies over 7,588 trading days. Both datasets were included because their noise characteristics differ from each other, allowing the proposed work to check whether the inverse scaling law generalizes beyond a single domain.
+
+\section{Complete Results}
+
+Table~\ref{tab:complete_results} reports MSE and training time for every configuration tested on ETTh1.
+
+\begin{table}[h]
+\centering
+\caption{Complete Results on ETTh1}
+\label{tab:complete_results}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Seq Len} & \textbf{MSE $\downarrow$} & \textbf{Time (min)} \\
+\midrule
+RAFT & 720 & \textbf{0.379} & 2.13 \\
+PatchTST & 720 & 0.385 & 2.90 \\
+PatchTST & 3000 & 0.647 & 18.33 \\
+Vanilla TF & 720 & 0.441 & 7.42 \\
+Vanilla TF & 1440 & 0.484 & 22.00 \\
+Vanilla TF & 3000 & 1.323 & 83.47 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Degradation Analysis}
+
+Table~\ref{tab:degradation} reports the MSE increase when context is extended from 720 to 3000 steps, broken down by model and dataset.
+
+\begin{table}[h]
+\centering
+\caption{Performance Degradation Across Contexts}
+\label{tab:degradation}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Dataset} & \textbf{720 $\rightarrow$ 3000} & \textbf{Degradation} \\
+\midrule
+Vanilla TF & ETTh1 & 0.441 $\rightarrow$ 1.323 & +200\% \\
+PatchTST & ETTh1 & 0.385 $\rightarrow$ 0.647 & +68\% \\
+PatchTST & ETTh2 & 0.307 $\rightarrow$ 0.533 & +73\% \\
+PatchTST & Exchange & 0.093 $\rightarrow$ 0.350 & +277\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Degradation is consistent across datasets. Financial data shows the largest increase, as expected given that currency exchange rates exhibit particularly high stochastic volatility.
+
+\section{Computational Environment}
+
+Experiments were run on cloud GPU infrastructure (16GB RAM, 8 CPU cores). Python 3.9, PyTorch 2.0.1, and CUDA 11.8 formed the core of the software stack; numpy 1.24, pandas 2.0, and scikit-learn 1.3 were also used. Training time grows quadratically with context length. At 3000 steps the Vanilla Transformer needed 83.47 minutes per run; RAFT needed 2.13 minutes for the same prediction task, about 40$\times$ faster, while also producing a better MSE.
+
+\section{Reproducibility}
+
+All datasets are publicly available from the Informer repository. The train-validation-test split is 60/20/20 in every experiment, and StandardScaler normalization is applied per feature. Random seeds are fixed at 2021. Early stopping halts training if validation MSE does not drop for 3 epochs. Replication requires downloading the datasets, applying the hyperparameters in Table~\ref{tab:hyperparams}, and running training with the Adam optimizer at the specified learning rate. Standard PyTorch was used throughout; no custom modifications were made.
+
+{\color{blue}
+\section{Foundation Model Comparison}\label{sec:foundation_comparison}
+
+To assess whether pretrained foundation models can bypass the inverse scaling law, Chronos-T5-Small \citep{ansari2024chronos} and Moirai-1.1-R-Small \citep{woo2024unified} were evaluated zero-shot on the ETTh1 test set. Chronos operates univariately with autoregressive rolling (chunk size 64), while Moirai is evaluated channel-independently for fair comparison with PatchTST.
+
+\begin{table}[h]
+\centering
+\caption{Foundation Model Zero-Shot vs.\ Trained Models on ETTh1 ($H=96$).}
+\label{tab:foundation}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Context} & \textbf{MSE $\downarrow$} & \textbf{MAE $\downarrow$} \\
+\midrule
+RAFT (ours) & 720 & \textbf{0.379} & --- \\
+PatchTST & 720 & 0.385 & --- \\
+\midrule
+Chronos-T5-Small & 336 & 0.497 & 0.415 \\
+Chronos-T5-Small & 720 & 0.483 & 0.414 \\
+Moirai-1.1-R-Small & 336 & 0.575 & 0.489 \\
+Moirai-1.1-R-Small & 720 & 0.553 & 0.487 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Neither foundation model matches RAFT or even PatchTST at $L=720$. Chronos at its best ($L=720$, MSE 0.483) is 27\% above RAFT, and Moirai ($L=720$, MSE 0.553) is 46\% above. Zero-shot generality does not compensate for targeted retrieval on stochastic data.
+
+\section{Multi-Horizon Evaluation}
+
+The inverse scaling law is tested at longer prediction horizons ($H \in \{336, 720\}$) to verify that the phenomenon generalizes beyond $H=96$.
+
+\begin{table}[h]
+\centering
+\caption{Multi-Horizon Results on ETTh1 (MSE $\downarrow$).}
+\label{tab:multi_horizon}
+\small
+\begin{tabular}{llcc}
+\toprule
+\textbf{Model} & \textbf{Seq Len} & \textbf{$H=336$} & \textbf{$H=720$} \\
+\midrule
+RAFT & 720 & \textbf{0.438} & \textbf{0.474} \\
+PatchTST & 720 & 0.503 & 0.517 \\
+PatchTST & 3000 & 0.800 & 1.513 \\
+Vanilla TF & 720 & 0.586 & 0.755 \\
+Vanilla TF & 3000 & 0.763 & 0.882 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The inverse scaling law holds at all tested horizons. PatchTST degradation worsens at longer horizons: +59\% at $H=336$ and +193\% at $H=720$ when context extends from 720 to 3000. RAFT maintains the lowest MSE at every horizon without any context extension.
+
+\section{Training Configuration Sensitivity}
+
+The magnitude of long-context degradation depends on the training protocol. Under the schedule used in the main experiments (10 epochs, step-decay learning rate), PatchTST at $L=3000$ reaches MSE 0.647 (+68\% over $L=720$). With an extended schedule (100 epochs, cosine annealing learning rate), the same architecture achieves MSE 0.426 at $L=3000$, narrowing the gap to approximately 8\% over $L=720$ (MSE 0.395). Importantly, RAFT (MSE 0.379) remains superior under both training configurations, and the need for careful hyperparameter tuning to mitigate long-context degradation is itself a practical limitation of the continuous-context paradigm.
+}
+
+\end{document}
