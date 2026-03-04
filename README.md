@@ -1,138 +1,53 @@
-# RAFT: Retrieval-Augmented Forecasting for Time Series
+# Retrieval Mechanisms Surpass Long-Context Scaling in Time Series Forecasting
 
-**Retrieval Mechanisms Surpass Long-Context Scaling in Time Series Forecasting**
+**Accepted as Poster at [ICLR 2026 TSALM Workshop](https://tsalm-workshop.github.io/)**
+(1st ICLR Workshop on Time Series in the Age of Large Models)
 
-*Rishi Ahuja, Kumar Prateek, Simranjit Singh, Vijay Kumar*
-Department of Information Technology, NIT Jalandhar
+[Rishi Ahuja](https://rishia.in/research) · [Kumar Prateek](https://scholar.google.com/citations?user=yBNfbLwAAAAJ) · [Simranjit Singh](https://scholar.google.co.in/citations?user=uVD29RwAAAAJ&hl=en) · [Vijay Kumar](https://scholar.google.com/citations?user=kviNdloAAAAJ&hl=en&authuser=1)
 
-**Accepted as Poster at ICLR 2026 TSALM Workshop**
+Department of Information Technology, Dr. B.R. Ambedkar National Institute of Technology Jalandhar
+
+[[Paper]](paper/paper.tex) · [[OpenReview]](https://openreview.net/forum?id=Qj96MlCmZw) · [[Homepage]](https://rishia.in/research)
 
 ---
 
-## Overview
+## Abstract
 
-RAFT introduces retrieval-augmented generation (RAG) to time series forecasting. Instead of scaling the context window (which causes attention entropy dilution), RAFT retrieves the most relevant historical subsequences using periodicity-aware DTW matching and augments the input at inference time.
+Time Series Foundation Models (TSFMs) have borrowed the long context paradigm from natural language processing under the premise that feeding more history into the model improves forecast quality. But in stochastic domains, distant history is often just high-frequency noise, not signal. This work tests whether this premise actually holds by running continuous context architectures (including PatchTST) through the ETTh1 benchmark. The results contradict the premise: an inverse scaling law shows up clearly, with forecasting error rising as context gets longer. A 3,000-step window can cause performance to drop by up to 68%, evidence that attention mechanisms are poor at ignoring irrelevant historical volatility. Retrieval-Augmented Forecasting (RAFT) is evaluated as an alternative. RAFT achieves a mean squared error (MSE) of 0.379 with a fixed 720-step window and selective retrieval, outperforming both long-context configurations and zero-shot foundation models (Chronos, Moirai) despite requiring far less computation. Retrieved segments function as dynamic exogenous variables that provide context-informed inductive bias without the noise penalties attached to long continuous windows.
 
-**Key Results (ETTh1, pred_len=96):**
+## About This Repository
 
-| Model | Context | MSE | MAE |
-|-------|---------|-----|-----|
-| **RAFT (ours)** | 720 | **0.379** | **0.399** |
-| PatchTST | 720 | 0.385 | 0.405 |
-| PatchTST | 3000 | 0.426 | 0.434 |
-| TransformerLongContext | 3000 | 0.647 | 0.556 |
-| Chronos (zero-shot) | 720 | 0.483 | 0.471 |
-| Moirai (zero-shot) | 720 | 0.553 | 0.516 |
+This repository contains the full experimental code and analysis for the paper. It is a **comparison study** — the paper evaluates existing architectures (PatchTST, Vanilla Transformers, Chronos, Moirai) alongside the RAFT method proposed by [Han et al. (2025)](https://github.com/junhyukOh/RAFT) to investigate the failure of long-context scaling in stochastic time series forecasting. The RAFT model implementation included here is adapted from the original RAFT codebase; it is not a novel architecture contribution of this work.
 
-## Repository Structure
+The code is organized around two entry points. `run.py` handles RAFT and PatchTST experiments through a standard argument parser — you can configure the model, dataset, context length, prediction horizon, and all hyperparameters from the command line. `run_long_context.py` serves the same purpose for the Vanilla Transformer long-context baseline. Both scripts handle training, validation, and test evaluation in a single run.
 
-```
-RAFT/
-├── models/                     # Model implementations
-│   ├── RAFT.py                 # RAFT: Retrieval-Augmented Forecasting Transformer
-│   ├── PatchTST.py             # PatchTST baseline (Nie et al., 2023)
-│   └── TransformerLongContext.py # Vanilla Transformer with long context
-├── layers/                     # Shared layers
-│   ├── Retrieval.py            # Periodicity-aware DTW retrieval module
-│   ├── SelfAttention_Family.py # Full attention implementation
-│   ├── Embed.py                # Positional and temporal embeddings
-│   └── Transformer_EncDec.py   # Encoder/decoder architecture
-├── data_provider/              # Data loading and processing
-├── exp/                        # Experiment runners
-│   ├── exp_long_term_forecasting.py   # RAFT & PatchTST experiments
-│   └── exp_long_context_forecasting.py # Long-context baseline
-├── utils/                      # Utilities (metrics, DTW, augmentation, etc.)
-├── experiments/                # Camera-ready experiment scripts
-│   ├── w1_multi_horizon.py     # Multi-horizon evaluation (H=96,336,720)
-│   ├── w2_foundation_eval.py   # Chronos & Moirai zero-shot evaluation
-│   ├── w3_attention_entropy.py # Attention entropy analysis
-│   └── run_corrected_patchtst.py # Corrected PatchTST hyperparameters
-├── scripts/                    # Shell scripts for reproduction
-├── data/ETT/                   # ETT datasets
-├── paper/                      # Paper source (LaTeX)
-├── run.py                      # Entry point: RAFT & PatchTST
-└── run_long_context.py         # Entry point: TransformerLongContext
-```
+Model definitions live under `models/`, with `RAFT.py` implementing the retrieval-augmented forecasting transformer, `PatchTST.py` providing the patched channel-independent transformer, and `TransformerLongContext.py` containing the vanilla long-context encoder–decoder. The retrieval mechanism — periodicity-aware DTW matching and cosine similarity selection — is implemented in `layers/Retrieval.py`. Data loading for the ETT benchmarks is handled by `data_provider/`, and shared utilities (metrics, DTW, augmentation, training logging) are in `utils/`.
 
-## Setup
+The `experiments/` directory contains self-contained scripts that reproduce the camera-ready analyses: multi-horizon evaluation across prediction lengths 96, 336, and 720; zero-shot evaluation of Chronos and Moirai foundation models; attention entropy measurements that quantify the dilution effect; and corrected PatchTST baselines with proper hyperparameters from the original paper. Each script can be run independently and writes results to `experiments/results/`.
+
+Shell scripts under `scripts/` automate full reproduction. `scripts/run_main_experiments.sh` runs all core experiments sequentially, and `scripts/download_data.sh` fetches the ETT datasets if they are not already present. The ETTh1 and ETTh2 datasets are included in `data/ETT/` for convenience.
+
+## Getting Started
 
 ```bash
-# Clone the repository
-git clone https://github.com/RishiAhuja/caft.git
-cd caft
-
-# Install dependencies
+git clone https://github.com/RishiAhuja/ahuja2026retrieval.git
+cd ahuja2026retrieval
 pip install -r requirements.txt
-
-# Download datasets (if not included)
-bash scripts/download_data.sh
-```
-
-## Reproducing Main Results
-
-### Quick Start — All Main Experiments
-
-```bash
 bash scripts/run_main_experiments.sh
-```
-
-### Individual Experiments
-
-**RAFT (our method):**
-```bash
-python run.py \
-    --model RAFT --data ETTh1 --seq_len 720 --pred_len 96 \
-    --d_model 512 --n_heads 8 --e_layers 2 --d_ff 2048 \
-    --train_epochs 10 --batch_size 32 --learning_rate 0.0001
-```
-
-**PatchTST (corrected hyperparameters):**
-```bash
-python run.py \
-    --model PatchTST --data ETTh1 --seq_len 720 --pred_len 96 \
-    --d_model 16 --n_heads 4 --e_layers 3 --d_ff 128 \
-    --dropout 0.3 --train_epochs 100 --batch_size 128 --lradj TST
-```
-
-**Vanilla Transformer (long context baseline):**
-```bash
-python run_long_context.py \
-    --model TransformerLongContext --data ETTh1 --seq_len 3000 --pred_len 96 \
-    --d_model 128 --n_heads 8 --e_layers 2 --d_ff 512 \
-    --dropout 0.15 --train_epochs 30 --batch_size 24
-```
-
-## Camera-Ready Experiments
-
-These scripts reproduce the additional analyses added during the camera-ready revision:
-
-```bash
-# Multi-horizon evaluation (Table A2)
-python experiments/w1_multi_horizon.py
-
-# Foundation model comparison (Table A3) — requires chronos-forecasting, uni2ts
-python experiments/w2_foundation_eval.py --model all
-
-# Attention entropy analysis (Section 3.3)
-python experiments/w3_attention_entropy.py
-
-# Corrected PatchTST with proper hyperparameters (Table A4)
-python experiments/run_corrected_patchtst.py --phase all
 ```
 
 ## Citation
 
 ```bibtex
-@inproceedings{
-  ahuja2026retrieval,
-  title={Retrieval Mechanisms Surpass Long-Context Scaling in Time Series Forecasting},
-  author={Rishi Ahuja and Kumar Prateek and Simranjit Singh and Dr Vijay Kumar},
-  booktitle={1st ICLR Workshop on Time Series in the Age of Large Models},
-  year={2026},
-  url={https://openreview.net/forum?id=Qj96MlCmZw}
+@inproceedings{ahuja2026retrieval,
+    title={Retrieval Mechanisms Surpass Long-Context Scaling in Time Series Forecasting},
+    author={Rishi Ahuja and Kumar Prateek and Simranjit Singh and Vijay Kumar},
+    booktitle={1st ICLR Workshop on Time Series in the Age of Large Models},
+    year={2026},
+    url={https://openreview.net/forum?id=Qj96MlCmZw}
 }
 ```
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details. Portions of this codebase are derived from [RAFT](https://github.com/junhyukOh/RAFT) by Seungeon Lee.
