@@ -12,7 +12,7 @@ dist/
 build/
 *.egg-info/
 *.egg
-
+workshop/
 # Virtual environments
 .venv/
 venv/
