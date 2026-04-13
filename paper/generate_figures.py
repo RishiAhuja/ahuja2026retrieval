@@ -17,7 +17,7 @@ plt.rcParams.update({
 
 os.makedirs('figures', exist_ok=True)
 
-TARGET_HEIGHT = 1.0   # ← change this ONE value to control both figures
+TARGET_HEIGHT = 2.25   # ← change this ONE value to control both figures
 
 
 def _save(fig, path, width, height):
@@ -34,13 +34,13 @@ def _save(fig, path, width, height):
 
 def plot_iclr_mse_comparison():
     models = [
-        'RAFT (720)',
-        'PatchTST (720)',
-        'Exp7 (720)',
-        'Exp3 (720)',
-        'Exp2 (1440)',
-        'PatchTST (3000)',
-        'Exp1 (3000)',
+        'RAFT\n(Ret-720)',
+        'PatchTST\n(720)',
+        'Vanilla TF\n(Best, 720)',
+        'Vanilla TF\n(720)',
+        'Vanilla TF\n(1440)',
+        'PatchTST\n(3000)',
+        'Vanilla TF\n(3000)',
     ]
     mse_values = [0.379, 0.385, 0.416, 0.441, 0.484, 0.647, 1.323]
     colors = [
@@ -69,7 +69,7 @@ def plot_iclr_mse_comparison():
                linewidth=1, alpha=0.6, label='RAFT Baseline')
 
     ax.set_ylabel('Test MSE', labelpad=4, fontsize=8, weight='bold')
-    ax.legend(loc='upper right', fontsize=7, framealpha=0.95, edgecolor='gray')
+    ax.legend(loc='upper left', fontsize=7, framealpha=0.95, edgecolor='gray')
     ax.tick_params(axis='x', labelsize=7)
     ax.tick_params(axis='y', labelsize=7)
 
