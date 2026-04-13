@@ -60,4 +60,4 @@ bash scripts/run_main_experiments.sh
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details. Portions of this codebase are derived from [RAFT](https://github.com/junhyukOh/RAFT) by Seungeon Lee.
+MIT — see [LICENSE](LICENSE) for details. Portions of this codebase are derived from [RAFT](https://github.com/archon159/RAFT) by Seungeon Lee.
