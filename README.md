@@ -1,4 +1,12 @@
+<p align="center">
+  <img src="assets/banner.png" alt="Retrieval Mechanisms Surpass Long-Context Scaling in Time Series Forecasting" width="100%">
+</p>
+
 # Retrieval Mechanisms Surpass Long-Context Scaling in Time Series Forecasting
+
+[![OpenReview](https://img.shields.io/badge/OpenReview-Qj96MlCmZw-b31b1b)](https://openreview.net/forum?id=Qj96MlCmZw)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![ICLR 2026](https://img.shields.io/badge/ICLR%202026-TSALM%20Workshop-blue)](https://tsalm-workshop.github.io/)
 
 **Accepted as Poster at [ICLR 2026 TSALM Workshop](https://tsalm-workshop.github.io/)**
 (1st ICLR Workshop on Time Series in the Age of Large Models)
@@ -10,6 +18,8 @@ Department of Information Technology, Dr. B.R. Ambedkar National Institute of Te
 [[Paper]](paper/paper.tex) · [[OpenReview]](https://openreview.net/forum?id=Qj96MlCmZw) · [[Homepage]](https://rishia.in/research)
 
 ---
+
+> **TL;DR:** Longer context windows *hurt* time series forecasting — we show an inverse scaling law where error rises up to 68% with more history, and demonstrate that retrieval-augmented forecasting (RAFT) beats both long-context models and foundation models while being 40× faster.
 
 ## Abstract
 
